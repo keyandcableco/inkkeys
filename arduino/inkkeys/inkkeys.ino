@@ -1,7 +1,7 @@
 /*
  * E-Ink adaptive macro keyboard
  * See https://there.oughta.be/a/macro-keyboard
- *
+ * 
  * This is the main code which acts as a HID keyboard while
  * allowing to be controlled through a serial interface.
  */
@@ -24,6 +24,8 @@ uint32_t swDebounce[] = {0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L};
 //Rotary encoder
 Encoder rotary(PIN_ROTA, PIN_ROTB);
 long rotaryPosition = 0;  //Last position to keep track of changes
+bool rotaryAcceleration = false;  //Repeat steps when the dial is turned quickly, set with "O A 1"
+unsigned long lastRotaryTime = 0;
 
 //Display
 #if DISPLAY_REVISION == 2
@@ -92,21 +94,30 @@ class InkkeysDisplay : public GxEPD2_290 {
 InkkeysDisplay display(/*CS=*/ PIN_CS, /*DC=*/ PIN_DC, /*RST=*/ PIN_RST, /*BUSY=*/ PIN_BUSY);
 
 void initDisplay() {
+  //Serial diagnostics stay off (0): they would be mixed into the protocol.
+  //The reset duration of 2ms is needed by Waveshare boards with the "clever" reset circuit.
   display.init(0, true, 2, false);
-  display.writeScreenBuffer();
-  display.refresh();
-  display.writeScreenBufferAgain();
+  //Clears both panel buffers with a single full refresh. (Calling
+  //writeScreenBuffer + refresh here did two full refreshes, ~8s of flashing.)
+  display.clearScreen();
   display.powerOff();
 }
 
 void setup() {
-  initLEDs();
   //Initialize LEDs first, for some reason they initialize blue
   //  after a power cycle which is pretty annoying.
+  initLEDs();
+
+  pinMode(LED_BUILTIN_TX, INPUT); //Keep the TX LED dark
 
   Serial.begin(115200);
+  //Do not wait for a serial connection here: the keys and jog dial
+  //have to work even when no controller is running on the host.
 
-  defaultAssignment();
+  //Start with the layout saved on the keyboard, if there is one
+  bool savedLayout = loadSavedLayout();
+  if (!savedLayout)
+    defaultAssignment();
 
   //Greeting on serial
   Serial.println("= InkKeys =");
@@ -121,6 +132,8 @@ void setup() {
 
   //Init e-ink screen, clear it and turn it off.
   initDisplay();
+  if (savedLayout)
+    showSavedLabels();
 
   //Init HID.
   //These three should provide most desired functions and as the 32u4
@@ -184,9 +197,26 @@ void checkRotaryEncoderAndReportChanges() {
     Serial.print("R");
     Serial.println(report);
     rotaryPosition += report*ROT_FACTOR;
-    for (int i = 0; i < report; i++)
-      executeEvents(assignments[9][0]);
-    for (int i = 0; i < -report; i++)
-      executeEvents(assignments[9][1]);
+
+    //Turning while the dial is pressed has its own assignments ("P" slots), if there are any
+    byte slot = 9;
+    if (pressed[0] && (assignments[10][0][0].deviceAndType != DEVICE_NONE || assignments[10][1][0].deviceAndType != DEVICE_NONE))
+      slot = 10;
+
+    //Fast turns repeat each step, so long distances are quick while slow turns stay precise
+    unsigned long now = millis();
+    int repeat = 1;
+    if (rotaryAcceleration) {
+      if (now - lastRotaryTime < ROT_ACCEL_FAST)
+        repeat = 4;
+      else if (now - lastRotaryTime < ROT_ACCEL_MEDIUM)
+        repeat = 2;
+    }
+    lastRotaryTime = now;
+
+    for (int i = 0; i < report * repeat; i++)
+      executeEvents(assignments[slot][0]);
+    for (int i = 0; i < -report * repeat; i++)
+      executeEvents(assignments[slot][1]);
   }
 }

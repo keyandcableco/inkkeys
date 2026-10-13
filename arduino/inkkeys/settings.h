@@ -22,6 +22,7 @@ const short DISP_H = 296; //Display height
 //LEDs
 const byte PIN_LED = 20;
 const byte N_LED = 12; //Number of LEDs
+#define LED_TYPE (NEO_RGB + NEO_KHZ400) //The LEDs of the original build. Some others need NEO_KHZ800.
 
 //Rotary encoder
 const byte PIN_ROTA = 0;
@@ -30,6 +31,8 @@ const byte PIN_SW1 = 21;
 
 const byte ROT_FACTOR = 4;         //Smallest reported step, typically one "click" on the encoder 
 const byte ROT_CIRCLE_STEPS = 20;  //Rotary steps in a full circle
+const byte ROT_ACCEL_MEDIUM = 80;  //With acceleration on, steps less than this many ms apart count twice...
+const byte ROT_ACCEL_FAST = 35;    //...and less than this many ms apart four times
 
 //Keys
 const byte PIN_SW2 = 2;

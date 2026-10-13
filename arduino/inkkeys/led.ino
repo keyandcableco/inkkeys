@@ -6,7 +6,7 @@
  */
 
 //LEDs
-Adafruit_NeoPixel leds = Adafruit_NeoPixel(N_LED, PIN_LED, NEO_RGB + NEO_KHZ400);
+Adafruit_NeoPixel leds = Adafruit_NeoPixel(N_LED, PIN_LED, LED_TYPE);
 
 void initLEDs() {
   leds.begin();
@@ -48,4 +48,3 @@ void ledGreeting(int steps) {
   leds.clear();
   leds.show();
 }
-

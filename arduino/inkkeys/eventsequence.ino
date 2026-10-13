@@ -5,26 +5,6 @@
  * This part defines functions that handle event sequences that can be assigned to buttons
  */
 
-// Compare to Event.deviceAndType & 0x0f
-const byte DEVICE_NONE = 0x00; //No event
-const byte DEVICE_DELAY = 0x01;
-const byte DEVICE_CONSUMER = 0x02;
-const byte DEVICE_KEYBOARD = 0x03;
-const byte DEVICE_MOUSE = 0x04;
-
-// Compare to Event.deviceAndType & 0xf0
-const byte TYPE_NONE = 0x00;
-const byte TYPE_PRESS = 0x10;
-const byte TYPE_RELEASE = 0x20;
-const byte TYPE_INCREMENT = 0x30;
-const byte TYPE_STROKE = 0x40;
-
-// Compare to Event.keycodeOrDelay & 0xff00
-const byte MOUSEAXIS_BUTTON = 0x00; //The button is defined in second byte using the definitions in BootMouse
-const byte MOUSEAXIS_X = 0x01;
-const byte MOUSEAXIS_Y = 0x02;
-const byte MOUSEAXIS_WHEEL = 0x03;
-
 void executeEvents(Event events[]) {
   for (byte i = 0; i < N_EVENTS; i++) {
     byte device = events[i].deviceAndType & 0x0f;
@@ -98,7 +78,7 @@ void executeEvents(Event events[]) {
 
 void defaultAssignment() {
   //Initialize assignments array with defaults
-  for (byte key = 0; key < 10; key++) {
+  for (byte key = 0; key < N_SLOTS; key++) {
     for (byte event = 0; event < N_EVENTS; event++) {
       assignments[key][0][event].deviceAndType = DEVICE_NONE;
       assignments[key][1][event].deviceAndType = DEVICE_NONE;

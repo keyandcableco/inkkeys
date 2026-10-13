@@ -14,7 +14,7 @@ unsigned short serialBufferCount = 0; //Must be wider than a byte, or it wraps t
 unsigned short expectingImageData = 0;
 unsigned short imageDataTargetX, imageDataTargetY, imageDataTargetWidth, imageDataCurrentY;
 unsigned short imageDataBytesPerRow, imageDataChunkSize; //Image rows are buffered and written in chunks of whole rows
-bool imageDataAgain = false; //True for the repeated transfer after a refresh, see processDisplayCommand()
+bool imageDataAgain = false; //True for the second transfer after a refresh, which must also go to the panel's "previous" buffer
 
 //Writes the rows buffered so far to the display controller.
 //Writing many rows per call matters: GxEPD2 sleeps 1ms on every write call.
@@ -22,7 +22,7 @@ void flushImageRows() {
   unsigned short rows = serialBufferCount / imageDataBytesPerRow;
   if (rows == 0)
     return;
-  if (imageDataAgain)
+  if (imageDataAgain) //After a partial refresh, both panel buffers need the new content or the next refresh ghosts
     display.writeImageAgain((uint8_t*)serialBuffer, imageDataTargetX, imageDataCurrentY, imageDataTargetWidth, rows, false, false, false);
   else
     display.writeImage((uint8_t*)serialBuffer, imageDataTargetX, imageDataCurrentY, imageDataTargetWidth, rows, false, false, false);
@@ -165,7 +165,7 @@ byte processMouse(Event &event, byte i) {
         event.keycodeOrDelay = code;
         handled++;
         break;
-      case 'i':
+      case 'i': {
         handled++;
         if (i+handled >= serialBufferCount) {
           printErrorWithIndex("Increment without value", i+handled);
@@ -174,91 +174,173 @@ byte processMouse(Event &event, byte i) {
         int8_t inc = atoi(serialBuffer+i+handled);
         event.deviceAndType = DEVICE_MOUSE | TYPE_INCREMENT;
         event.keycodeOrDelay = code | (inc & 0xff);
-        while (i+handled < serialBufferCount && ((serialBuffer[i+handled] >= '0' && serialBuffer[i+handled] <= '9') || serialBuffer[i+handled] <= '-'))
+        while (i+handled < serialBufferCount && ((serialBuffer[i+handled] >= '0' && serialBuffer[i+handled] <= '9') || serialBuffer[i+handled] == '-'))
           handled++;
         break;
+      }
       default:
         printErrorWithIndex("Type not supported", i+handled);
         return 0;
     }
-    return handled;
   }
+  return handled;
 }
 
-//Called if the serial input finds a command starting with "A" which assigns the buttons
-void processAssignCommand() {
-  if (serialBufferCount < 4 || serialBuffer[1] != ' ') {
-    printErrorWithIndex("Bad format", 1);
-    return;
-  }
-  
-  byte key, pr;
-  if (serialBuffer[2] >= '1' && serialBuffer[2] <= '9')
-    key = serialBuffer[2] - '1';
-  else if (serialBuffer[2] == 'R')
+//Parses an assignment slot like "2p", "R+" or "P-" at serialBuffer[i]: keys 1-9 pressed/released,
+//R the jog dial turned, P the jog dial turned while it is pressed. Returns false if it is not one.
+bool parseSlot(byte i, byte &key, byte &pr) {
+  char k = serialBuffer[i];
+  if (k >= '1' && k <= '9')
+    key = k - '1';
+  else if (k == 'R')
     key = 9;
-  else {
-    printErrorWithIndex("Bad format", 2);
-    return;
-  }
-  switch(serialBuffer[3]) {
-    case 'p':
-    case '+':
-      pr = 0;
-      break;
-    case 'r':
-    case '-':
-      pr = 1;
-      break;
-    default:
-      pr = 0xff;
-      break;
-  }
-  if (pr == 0xff) {
-    printErrorWithIndex("Bad format", 3);
-    return;
-  }
-  
-  byte i = 4;
+  else if (k == 'P')
+    key = 10;
+  else
+    return false;
+  char t = serialBuffer[i+1];
+  if (t == 'p' || t == '+')
+    pr = 0;
+  else if (t == 'r' || t == '-')
+    pr = 1;
+  else
+    return false;
+  return true;
+}
+
+//Parses the events starting at serialBuffer[i], each preceded by a space, into events[N_EVENTS].
+//Unused entries are set to empty events, so the sequence ends there.
+void parseEvents(byte i, Event events[]) {
   byte event = 0;
-  bool error = false;
   while (i < serialBufferCount && event < N_EVENTS) {
     if (serialBuffer[i] != ' ') {
       printErrorWithIndex("Event not separated by white-space", i);
-      return;
+      break;
     }
     i++;
     if (i+1 >= serialBufferCount) {
       printErrorWithIndex("Sudden end", i);
-      return;
+      break;
     }
 
     byte processed = 0;
     switch (serialBuffer[i]) {
       case 'd':
-        processed = processDelay(assignments[key][pr][event], i);
+        processed = processDelay(events[event], i);
         break;
       case 'c':
-        processed = processConsumer(assignments[key][pr][event], i);
+        processed = processConsumer(events[event], i);
         break;
       case 'k':
-        processed = processKeyboard(assignments[key][pr][event], i);
+        processed = processKeyboard(events[event], i);
         break;
       case 'm':
-        processed = processMouse(assignments[key][pr][event], i);
+        processed = processMouse(events[event], i);
         break;
       default:
         printErrorWithIndex("Unknown device", i);
     }
-    
+
     if (processed == 0)
       break;
     event++;
     i += processed;
   }
   for (; event < N_EVENTS; event++) {
-    assignments[key][pr][event].deviceAndType = DEVICE_NONE;
+    events[event].deviceAndType = DEVICE_NONE;
   }
+}
+
+//"A <slot> <events>": assigns events to a key, see parseSlot()
+void processAssignCommand() {
+  byte key, pr;
+  if (serialBufferCount < 4 || serialBuffer[1] != ' ' || !parseSlot(2, key, pr)) {
+    printErrorWithIndex("Bad format", 2);
+    return;
+  }
+  parseEvents(4, assignments[key][pr]);
+}
+
+//"X <events>": runs events right away. This lets the controller trigger actions itself,
+//for long presses, double taps, key combinations and macros longer than N_EVENTS.
+void processExecuteCommand() {
+  Event events[N_EVENTS];
+  parseEvents(1, events);
+  executeEvents(events);
+}
+
+//"T <text>": types text through the keyboard layout. "\n" types Enter, "\\" a backslash.
+void processTypeCommand() {
+  for (byte i = 2; i < serialBufferCount; i++) {
+    if (serialBuffer[i] == '\\' && i+1 < serialBufferCount) {
+      i++;
+      if (serialBuffer[i] == 'n')
+        BootKeyboard.write(KEY_ENTER);
+      else
+        BootKeyboard.write((uint8_t)serialBuffer[i]);
+    } else {
+      BootKeyboard.write((uint8_t)serialBuffer[i]);
+    }
+  }
+}
+
+//"O <option> <value>": "O A 1" speeds up turning the jog dial quickly, "O A 0" turns that off
+void processOptionCommand() {
+  if (serialBufferCount < 5 || serialBuffer[1] != ' ' || serialBuffer[3] != ' ') {
+    Serial.println("E: Bad format.");
+    return;
+  }
+  switch (serialBuffer[2]) {
+    case 'A':
+      rotaryAcceleration = serialBuffer[4] == '1';
+      break;
+    default:
+      Serial.println("E: Unknown option.");
+  }
+}
+
+//Prints events in the format they are assigned with
+void printEvents(Event events[]) {
+  for (byte e = 0; e < N_EVENTS; e++) {
+    byte device = events[e].deviceAndType & 0x0f;
+    byte etype = events[e].deviceAndType & 0xf0;
+    unsigned short value = events[e].keycodeOrDelay;
+    if (device == DEVICE_NONE)
+      break;
+    Serial.print(' ');
+    if (device == DEVICE_DELAY) {
+      Serial.print('d');
+      Serial.print(value);
+      continue;
+    }
+    Serial.print(device == DEVICE_CONSUMER ? 'c' : device == DEVICE_KEYBOARD ? 'k' : 'm');
+    if (device == DEVICE_MOUSE && (value >> 8) != MOUSEAXIS_BUTTON)
+      Serial.print("?xyw"[(value >> 8) & 3]);
+    else
+      Serial.print(device == DEVICE_MOUSE ? (value & 0xff) : value);
+    if (etype == TYPE_PRESS)
+      Serial.print('p');
+    else if (etype == TYPE_RELEASE)
+      Serial.print('r');
+    else if (etype == TYPE_INCREMENT) {
+      Serial.print('i');
+      Serial.print((int8_t)(value & 0xff));
+    }
+  }
+  Serial.println();
+}
+
+//"G <slot>": prints the events assigned to a slot as "= <slot> <events>"
+void processGetCommand() {
+  byte key, pr;
+  if (serialBufferCount < 4 || serialBuffer[1] != ' ' || !parseSlot(2, key, pr)) {
+    printErrorWithIndex("Bad format", 2);
+    return;
+  }
+  Serial.print("= ");
+  Serial.print(serialBuffer[2]);
+  Serial.print(serialBuffer[3]);
+  printEvents(assignments[key][pr]);
 }
 
 void processDisplayCommand() {
@@ -294,9 +376,7 @@ void processDisplayCommand() {
   unsigned short imageDataTargetHeight = atoi(serialBuffer + i);
   while (i < serialBufferCount && serialBuffer[i] >= '0' && serialBuffer[i] <= '9')
     i++;
-  //An optional trailing " a" marks the repeat of an image after a refresh. Displays that compare
-  //two buffers on a partial refresh (like the SSD1680 of revision 2) need it in both buffers,
-  //otherwise the next partial refresh drives pixels against stale data and leaves ghosts.
+  //Optional trailing " a": this is the repeat of an image after a refresh
   imageDataAgain = (i+1 < serialBufferCount && serialBuffer[i] == ' ' && serialBuffer[i+1] == 'a');
   imageDataBytesPerRow = (imageDataTargetWidth+7)/8;
   if (imageDataBytesPerRow == 0 || imageDataBytesPerRow > serialBufferSize) {
@@ -315,6 +395,7 @@ void processInfoCommand() {
   }
   Serial.println("Inkkeys");
   Serial.println("TEST 0");
+  Serial.println("VERSION 2"); //Supports the X, T, O, E and G commands and P slots
   Serial.print("N_LED ");
   Serial.println(N_LED);
   Serial.print("DISP_W ");
@@ -323,6 +404,8 @@ void processInfoCommand() {
   Serial.println(DISP_H);
   Serial.print("ROT_CIRCLE_STEPS ");
   Serial.println(ROT_CIRCLE_STEPS);
+  Serial.print("SAVED ");
+  Serial.println(savedChecksum()); //0 if no layout is saved on the keyboard
   Serial.println("Done");
 }
 
@@ -387,6 +470,21 @@ void handleSerialInput() {
             break;
           case 'R': //Trigger refresh
             processRefreshCommand();
+            break;
+          case 'X': //Run events now
+            processExecuteCommand();
+            break;
+          case 'T': //Type text
+            processTypeCommand();
+            break;
+          case 'O': //Set an option
+            processOptionCommand();
+            break;
+          case 'E': //Save a layout on the keyboard
+            processStoreCommand();
+            break;
+          case 'G': //Print an assignment
+            processGetCommand();
             break;
           default:  //Inknown command
             Serial.print("E: Unknown command: ");
