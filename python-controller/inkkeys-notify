@@ -1,0 +1,7 @@
+#!/bin/sh
+#Tells the inkkeys controller about an event, shown on the LED ring: done, attention or clear.
+#Used by Claude Code hooks. Plain shell (no Python start-up) and always succeeds, so it can never slow down or break a hook.
+dir="$HOME/.cache/inkkeys"
+mkdir -p "$dir" 2>/dev/null
+printf '%s %s\n' "$(date +%s.%N)" "${1:-done}" > "$dir/notify.tmp" 2>/dev/null && mv -f "$dir/notify.tmp" "$dir/notify" 2>/dev/null
+exit 0

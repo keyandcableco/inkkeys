@@ -1,0 +1,438 @@
+{
+  "version": 1,
+  "settings": {
+    "standalone": "Default"
+  },
+  "modes": [
+    {
+      "name": "Blender",
+      "enabled": true,
+      "match": {
+        "type": "window",
+        "pattern": "^Blender"
+      },
+      "title": "Blender",
+      "buttons": {
+        "2": {
+          "display": {
+            "icon": "icons/camera-reels.png"
+          },
+          "action": {
+            "type": "keys",
+            "keys": [
+              "KEYPAD_0"
+            ]
+          }
+        },
+        "3": {
+          "display": {
+            "icon": "icons/person-bounding-box.png"
+          },
+          "action": {
+            "type": "keys",
+            "keys": [
+              "KEYPAD_DIVIDE"
+            ]
+          }
+        },
+        "4": {
+          "display": {
+            "icon": "icons/dot.png"
+          },
+          "action": {
+            "type": "none"
+          }
+        },
+        "5": {
+          "display": {
+            "icon": "icons/dot.png"
+          },
+          "action": {
+            "type": "none"
+          }
+        },
+        "6": {
+          "display": {
+            "icon": "icons/aspect-ratio.png"
+          },
+          "action": {
+            "type": "keys",
+            "keys": [
+              "KEYPAD_DOT"
+            ]
+          }
+        },
+        "7": {
+          "display": {
+            "icon": "icons/collection.png"
+          },
+          "action": {
+            "type": "keys",
+            "keys": [
+              "KEY_LEFT_CTRL",
+              "KEY_F12"
+            ],
+            "tap": true
+          }
+        },
+        "8": {
+          "display": {
+            "icon": "icons/dot.png"
+          },
+          "action": {
+            "type": "none"
+          }
+        },
+        "9": {
+          "display": {
+            "icon": "icons/dot.png"
+          },
+          "action": {
+            "type": "none"
+          }
+        }
+      },
+      "jog": [
+        {
+          "label": "<   Play/Pause   >",
+          "cw": {
+            "type": "keys",
+            "keys": [
+              "KEY_RIGHT_ARROW"
+            ]
+          },
+          "ccw": {
+            "type": "keys",
+            "keys": [
+              "KEY_LEFT_ARROW"
+            ]
+          }
+        }
+      ],
+      "jogPress": {
+        "type": "keys",
+        "keys": [
+          "KEY_SPACE"
+        ]
+      },
+      "importedFrom": "ModeBlender"
+    },
+    {
+      "name": "GIMP",
+      "enabled": true,
+      "match": {
+        "type": "window",
+        "pattern": "^gimp"
+      },
+      "title": "Gimp",
+      "buttons": {
+        "2": {
+          "display": {
+            "icon": "icons/fullscreen.png"
+          },
+          "action": {
+            "type": "raw",
+            "press": [
+              "k226p",
+              "k5",
+              "k226r",
+              "k29"
+            ],
+            "release": []
+          }
+        },
+        "3": {
+          "display": {
+            "icon": "icons/upc-scan.png"
+          },
+          "action": {
+            "type": "raw",
+            "press": [
+              "k226p",
+              "k5",
+              "k226r",
+              "k12"
+            ],
+            "release": []
+          }
+        },
+        "4": {
+          "display": {
+            "icon": "icons/crop.png"
+          },
+          "action": {
+            "type": "raw",
+            "press": [
+              "k226p",
+              "k5",
+              "k226r",
+              "k15"
+            ],
+            "release": []
+          }
+        },
+        "5": {
+          "display": {
+            "icon": "icons/arrows-angle-expand.png"
+          },
+          "action": {
+            "type": "raw",
+            "press": [
+              "k226p",
+              "k5",
+              "k226r",
+              "k22"
+            ],
+            "release": []
+          }
+        },
+        "6": {
+          "display": {
+            "icon": "icons/clipboard-plus.png"
+          },
+          "action": {
+            "type": "keys",
+            "keys": [
+              "KEY_LEFT_CTRL",
+              "KEY_LEFT_SHIFT",
+              "KEY_V"
+            ],
+            "tap": true
+          }
+        },
+        "7": {
+          "display": {
+            "icon": "icons/layers-half.png"
+          },
+          "action": {
+            "type": "keys",
+            "keys": [
+              "KEY_LEFT_CTRL",
+              "KEY_LEFT_SHIFT",
+              "KEY_N"
+            ],
+            "tap": true
+          }
+        },
+        "8": {
+          "display": {
+            "icon": "icons/arrows-fullscreen.png"
+          },
+          "action": {
+            "type": "keys",
+            "keys": [
+              "KEY_LEFT_CTRL",
+              "KEY_LEFT_SHIFT",
+              "KEY_J"
+            ],
+            "tap": true
+          }
+        },
+        "9": {
+          "display": {
+            "icon": "icons/dot.png"
+          },
+          "action": {
+            "type": "none"
+          }
+        }
+      },
+      "jog": [
+        {
+          "label": "Tool size",
+          "cw": {
+            "type": "keys",
+            "keys": [
+              "KEY_LEFT_BRACE"
+            ]
+          },
+          "ccw": {
+            "type": "keys",
+            "keys": [
+              "KEY_RIGHT_BRACE"
+            ]
+          }
+        },
+        {
+          "label": "Tool opacity",
+          "cw": {
+            "type": "keys",
+            "keys": [
+              "KEY_LEFT_SHIFT",
+              "KEY_COMMA"
+            ]
+          },
+          "ccw": {
+            "type": "keys",
+            "keys": [
+              "KEY_LEFT_SHIFT",
+              "KEY_PERIOD"
+            ]
+          }
+        }
+      ],
+      "importedFrom": "ModeGimp"
+    },
+    {
+      "name": "OBS",
+      "enabled": false,
+      "match": {
+        "type": "process",
+        "name": "obs"
+      },
+      "python": "ModeOBS",
+      "notes": "Controls OBS scenes and sources (defined in modes.py). Install obs-websocket-py and enable the OBS websocket plugin, then enable this mode."
+    },
+    {
+      "name": "Default",
+      "enabled": true,
+      "match": {
+        "type": "always"
+      },
+      "title": "Default",
+      "buttons": {
+        "2": {
+          "display": {
+            "icon": "icons/play.png"
+          },
+          "action": {
+            "type": "media",
+            "key": "MEDIA_PLAY_PAUSE"
+          }
+        },
+        "3": {
+          "display": {
+            "icon": "icons/skip-start.png"
+          },
+          "action": {
+            "type": "media",
+            "key": "MEDIA_PREVIOUS"
+          }
+        },
+        "4": {
+          "display": {
+            "icon": "icons/volume-mute.png"
+          },
+          "action": {
+            "type": "media",
+            "key": "MEDIA_VOLUME_MUTE"
+          }
+        },
+        "5": {
+          "display": {
+            "icon": "icons/envelope.png"
+          },
+          "action": {
+            "type": "media",
+            "key": "CONSUMER_EMAIL_READER"
+          }
+        },
+        "6": {
+          "display": {
+            "icon": "icons/stop.png"
+          },
+          "action": {
+            "type": "media",
+            "key": "MEDIA_STOP"
+          }
+        },
+        "7": {
+          "display": {
+            "icon": "icons/skip-end.png"
+          },
+          "action": {
+            "type": "media",
+            "key": "MEDIA_NEXT"
+          }
+        },
+        "8": {
+          "display": {
+            "icon": "icons/house-door.png"
+          },
+          "action": {
+            "type": "media",
+            "key": "CONSUMER_BROWSER_HOME"
+          }
+        },
+        "9": {
+          "display": {
+            "icon": "icons/calculator.png"
+          },
+          "action": {
+            "type": "media",
+            "key": "CONSUMER_CALCULATOR"
+          },
+          "label": "Calc"
+        }
+      },
+      "jog": [
+        {
+          "label": "Mouse Wheel",
+          "cw": {
+            "type": "wheel",
+            "amount": -1
+          },
+          "ccw": {
+            "type": "wheel",
+            "amount": 1
+          },
+          "pressCw": {
+            "type": "keys",
+            "keys": [
+              "KEY_LEFT_CTRL",
+              "KEY_EQUAL"
+            ]
+          },
+          "pressCcw": {
+            "type": "keys",
+            "keys": [
+              "KEY_LEFT_CTRL",
+              "KEY_MINUS"
+            ]
+          }
+        },
+        {
+          "label": "Volume",
+          "cw": {
+            "type": "media",
+            "key": "MEDIA_VOLUME_UP"
+          },
+          "ccw": {
+            "type": "media",
+            "key": "MEDIA_VOLUME_DOWN"
+          },
+          "show": "volume"
+        },
+        {
+          "label": "Arrow Keys",
+          "cw": {
+            "type": "keys",
+            "keys": [
+              "KEY_RIGHT_ARROW"
+            ]
+          },
+          "ccw": {
+            "type": "keys",
+            "keys": [
+              "KEY_LEFT_ARROW"
+            ]
+          }
+        }
+      ],
+      "dialGestures": {
+        "combos": {
+          "2": {
+            "type": "open",
+            "target": "https://there.oughta.be/a/macro-keyboard",
+            "label": "inkkeys"
+          },
+          "3": {
+            "type": "text",
+            "text": "Hello from inkkeys!",
+            "label": "Hello"
+          }
+        }
+      }
+    }
+  ]
+}

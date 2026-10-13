@@ -24,7 +24,10 @@ def getActiveWindow():
         if sys.platform in ['linux', 'linux2']:
             windowID = root.get_full_property(display.intern_atom('_NET_ACTIVE_WINDOW'), Xlib.X.AnyPropertyType).value[0]
             window = display.create_resource_object('window', windowID)
-            return window.get_wm_class()[0]
+            #"instance class", e.g. "google-chrome Google-chrome". Java apps share a generic
+            #instance name, so the class is needed to tell them apart (Arduino IDE: "processing-app-Base").
+            wmClass = window.get_wm_class() #None for some windows (e.g. the desktop)
+            return " ".join(wmClass) if wmClass else None
         elif sys.platform in ['Windows', 'win32', 'cygwin']:
             window = win32gui.GetForegroundWindow()
             active_window_name = win32gui.GetWindowText(window)

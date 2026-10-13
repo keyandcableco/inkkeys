@@ -17,6 +17,11 @@ class CommandCode(Enum):
     LED = "L"
     REFRESH = "R"
     INFO = "I"
+    EXECUTE = "X"   # Firmware version 2 and up: run events now
+    TYPE = "T"      # Type text
+    OPTION = "O"    # Set an option ("O A 1": dial acceleration)
+    STORE = "E"     # Save a layout on the keyboard
+    GET = "G"       # Print an assignment
 
 class RefreshTypeCode(Enum):
     PARTIAL = "p"
@@ -46,6 +51,8 @@ class KeyCode(Enum):
     SW9_RELEASE = "9r"
     JOG_CW = "R+"
     JOG_CCW = "R-"
+    JOG_PRESSED_CW = "P+"  # Turning while the dial is pressed (firmware version 2)
+    JOG_PRESSED_CCW = "P-"
     JOG = "R" # Only for callbacks!
 
 class ActionCode(Enum):
