@@ -20,6 +20,19 @@ from serial import SerialException
 import serial.tools.list_ports
 import traceback
 
+#Only one controller may talk to the keyboard: two of them answer each other's
+#requests and keep losing the connection. A lock file keeps a second one out.
+if sys.platform.startswith("linux") or sys.platform == "darwin":
+    import fcntl
+    lockDir = os.path.join(os.path.expanduser("~"), ".cache", "inkkeys")
+    os.makedirs(lockDir, exist_ok=True)
+    lockFile = open(os.path.join(lockDir, "controller.lock"), "w")
+    try:
+        fcntl.flock(lockFile, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        print("The inkkeys controller is already running (in another terminal?). Only one can use the keyboard at a time.")
+        sys.exit(1)
+
 print("https://there.oughta.be/a/macro-keyboard")
 print('I will try to stay connected. Press Ctrl+c to quit.')
 
