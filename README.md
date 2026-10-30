@@ -23,7 +23,7 @@ This fork of [Staacks/inkkeys](https://github.com/Staacks/inkkeys) keeps the har
 
 ### Setup
 
-1. Flash `arduino/inkkeys` (libraries: HID-Project, Encoder, GxEPD2, Adafruit NeoPixel). In `settings.h`, set `DISPLAY_REVISION` to 2 if you have the newer display (and swap the pins as described [below](#display-revision-2)), and pick the `LED_TYPE` of your LEDs.
+1. Flash `arduino/inkkeys` (libraries: HID-Project, Encoder, GxEPD2 1.4.0 or newer, Adafruit NeoPixel). In `settings.h`, set `DISPLAY_REVISION` to 2 if you have the newer display (and swap the pins as described [below](#display-revision-2)), and pick the `LED_TYPE` of your LEDs.
 2. Install the Python packages: `pip3 install pyserial pillow psutil python-xlib` (on Linux; `pywin32` on Windows, `pyobjc` on macOS). The configurator also needs Tkinter (`python3-tk` on Debian/Ubuntu).
 3. Run `python3 python-controller/controller.py` and, to change things, `python3 python-controller/configurator.py`.
 
